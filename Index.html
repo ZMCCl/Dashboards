@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daily OS">
+<title>Daily OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0f;
+    --surface: #1a1a1c;
+    --surface2: #242428;
+    --border: #2e2e33;
+    --text: #f0f0f0;
+    --muted: #6b6b78;
+    --accent-morning: #f5a623;
+    --accent-reset: #7c6af7;
+    --accent-focus: #3ecf8e;
+    --accent-money: #f76c6c;
+    --accent-grocery: #5bc4f5;
+    --done-bg: #1e1e22;
+    --done-text: #3a3a42;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 100px;
+  }
+
+  /* HEADER */
+  .header {
+    padding: 56px 20px 20px;
+    position: relative;
+    background: linear-gradient(180deg, #141416 0%, transparent 100%);
+  }
+  .header-date {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .header-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .header-rule {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* PROGRESS BAR */
+  .progress-wrap {
+    padding: 0 20px 20px;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .progress-label span {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .progress-label .pct {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent-focus);
+  }
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-focus), var(--accent-morning));
+    border-radius: 99px;
+    transition: width 0.4s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    padding: 0 20px 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    border-color: transparent;
+    color: var(--bg);
+    font-weight: 700;
+  }
+  .tab[data-tab="daily"].active { background: var(--accent-morning); }
+  .tab[data-tab="money"].active { background: var(--accent-money); }
+  .tab[data-tab="grocery"].active { background: var(--accent-grocery); color: #0e0e0f; }
+
+  /* SECTIONS */
+  .content { padding: 0 20px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* SECTION BLOCK */
+  .section {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .section-subtitle {
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  /* CHECKLIST ITEMS */
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .item:last-child { border-bottom: none; }
+  .item:active { background: var(--surface2); }
+
+  .checkbox {
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(.4,0,.2,1);
+    position: relative;
+  }
+  .checkbox svg {
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s cubic-bezier(.4,0,.2,1);
+  }
+  .item.done .checkbox {
+    border-color: transparent;
+  }
+  .item.done .checkbox svg {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .item-label {
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--text);
+    transition: all 0.2s;
+    flex: 1;
+  }
+  .item.done .item-label {
+    color: var(--done-text);
+    text-decoration: line-through;
+    text-decoration-color: var(--muted);
+  }
+
+  /* Color variants per section */
+  .s-morning .item.done .checkbox { background: var(--accent-morning); }
+  .s-morning .checkbox { border-color: #3a3020; }
+  .s-morning .item:not(.done):hover .checkbox { border-color: var(--accent-morning); }
+
+  .s-reset .item.done .checkbox { background: var(--accent-reset); }
+  .s-reset .checkbox { border-color: #2a2548; }
+  .s-reset .item:not(.done):hover .checkbox { border-color: var(--accent-reset); }
+
+  .s-focus .item.done .checkbox { background: var(--accent-focus); }
+  .s-focus .checkbox { border-color: #1a3328; }
+  .s-focus .item:not(.done):hover .checkbox { border-color: var(--accent-focus); }
+
+  .s-money .item.done .checkbox { background: var(--accent-money); }
+  .s-money .checkbox { border-color: #3a1f1f; }
+  .s-money .item:not(.done):hover .checkbox { border-color: var(--accent-money); }
+
+  .s-grocery .item.done .checkbox { background: var(--accent-grocery); }
+  .s-grocery .checkbox { border-color: #1a2e3a; }
+  .s-grocery .item:not(.done):hover .checkbox { border-color: var(--accent-grocery); }
+
+  /* RULE BLOCK */
+  .rule-block {
+    margin: 0 16px 14px;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+  }
+  .rule-block p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .rule-block strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* GROCERY CATEGORY */
+  .grocery-cat {
+    padding: 8px 16px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ONLY ONE NOTICE */
+  .only-one {
+    margin: 10px 16px;
+    padding: 10px 12px;
+    background: rgba(124, 106, 247, 0.12);
+    border: 1px solid rgba(124, 106, 247, 0.3);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: #a99df5;
+    text-align: center;
+  }
+
+  /* RESET BUTTON */
+  .reset-section {
+    padding: 20px 0 0;
+    display: flex;
+    gap: 10px;
+  }
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .btn:active { opacity: 0.7; transform: scale(0.98); }
+  .btn.btn-primary {
+    background: var(--accent-focus);
+    color: var(--bg);
+    border-color: transparent;
+  }
+  .btn.btn-danger {
+    border-color: rgba(247, 108, 108, 0.3);
+    color: var(--accent-money);
+  }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(14, 14, 15, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    padding: 10px 20px 28px;
+    display: flex;
+    justify-content: space-around;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 6px 20px;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+  }
+  .nav-item .nav-icon { font-size: 22px; }
+  .nav-item .nav-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    transition: color 0.2s;
+  }
+  .nav-item.active .nav-label { color: var(--accent-morning); }
+
+  /* CONFETTI flash */
+  @keyframes flash {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+  }
+  .flash { animation: flash 0.3s ease; }
+
+  /* MONEY SYSTEM CARDS */
+  .system-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+  .sys-card {
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+  .sys-card .sys-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .sys-card .sys-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-focus);
+  }
+
+  /* STREAKS */
+  .streak-bar {
+    display: flex;
+    gap: 5px;
+    padding: 0 20px 16px;
+    align-items: center;
+  }
+  .streak-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .streak-dot.hit { background: var(--accent-focus); }
+  .streak-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+
+  /* SCROLL */
+  html { scroll-behavior: smooth; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-date" id="dateDisplay">—</div>
+  <div class="header-title">Daily OS</div>
+  <div class="header-rule">Done &gt; perfect &nbsp;·&nbsp; One task at a time</div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-label">
+    <span>Today's progress</span>
+    <span class="pct" id="pctLabel">0%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+</div>
+
+<div class="streak-bar">
+  <div class="streak-dot" id="s0"></div>
+  <div class="streak-dot" id="s1"></div>
+  <div class="streak-dot" id="s2"></div>
+  <div class="streak-dot" id="s3"></div>
+  <div class="streak-dot" id="s4"></div>
+  <div class="streak-dot" id="s5"></div>
+  <div class="streak-dot" id="s6"></div>
+  <span class="streak-label" id="streakLabel">0 day streak</span>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="daily" onclick="switchTab('daily')">☀️ Daily</button>
+  <button class="tab" data-tab="money" onclick="switchTab('money')">💰 Money</button>
+  <button class="tab" data-tab="grocery" onclick="switchTab('grocery')">🛒 Grocery</button>
+</div>
+
+<div class="content">
+
+  <!-- DAILY VIEW -->
+  <div class="view active" id="view-daily">
+
+    <div class="section s-morning">
+      <div class="section-header">
+        <span class="section-icon">☀️</span>
+        <span class="section-title">Morning</span>
+        <span class="section-subtitle">10–15 min</span>
+      </div>
+      <div class="item" data-id="make-bed" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Make bed</span>
+      </div>
+      <div class="item" data-id="quick-tidy" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Quick tidy (obvious stuff only)</span>
+      </div>
+      <div class="item" data-id="dishwasher" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Start dishwasher if needed</span>
+      </div>
+    </div>
+
+    <div class="section s-reset">
+      <div class="section-header">
+        <span class="section-icon">🌙</span>
+        <span class="section-title">Daily Reset</span>
+        <span class="section-subtitle">Pick ONE only</span>
+      </div>
+      <div class="only-one">⚡ Pick ONE. That's it. You're done.</div>
+      <div class="item reset-item" data-id="dishes" onclick="toggleReset(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Dishes</span>
+      </div>
+      <div class="item reset-item" data-id="laundry" onclick="toggleReset(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Laundry step (wash / dry / fold)</span>
+      </div>
+      <div class="item reset-item" data-id="trash" onclick="toggleReset(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Trash</span>
+      </div>
+      <div class="item reset-item" data-id="quick-clean" onclick="toggleReset(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Quick clean (10–20 min timer)</span>
+      </div>
+    </div>
+
+    <div class="section s-focus">
+      <div class="section-header">
+        <span class="section-icon">🎯</span>
+        <span class="section-title">Focus</span>
+        <span class="section-subtitle">Optional but ideal</span>
+      </div>
+      <div class="item" data-id="work-goal" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Work on goal (book / finances / life)</span>
+      </div>
+    </div>
+
+    <div class="rule-block">
+      <p>
+        <strong>Rules:</strong> Only ONE reset task required &nbsp;·&nbsp;
+        No "while I'm at it" &nbsp;·&nbsp; Done &gt; perfect
+      </p>
+    </div>
+
+    <div class="reset-section">
+      <button class="btn btn-danger" onclick="resetDay()">↺ Reset Day</button>
+      <button class="btn btn-primary" onclick="celebrate()">✓ Mark Day Done</button>
+    </div>
+
+  </div>
+
+  <!-- MONEY VIEW -->
+  <div class="view" id="view-money">
+
+    <div class="section s-money">
+      <div class="section-header">
+        <span class="section-icon">💰</span>
+        <span class="section-title">Money Check</span>
+        <span class="section-subtitle">Weekly</span>
+      </div>
+      <div class="item" data-id="open-bank" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#0e0e0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Open bank app</span>
+      </div>
+      <div class="item" data-id="review-transactions" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#0e0e0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Review recent transactions</span>
+      </div>
+      <div class="item" data-id="spot-waste" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#0e0e0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Spot what was unnecessary</span>
+      </div>
+      <div class="item" data-id="one-cut" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#0e0e0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Decide one thing to cut next week</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">⚙️</span>
+        <span class="section-title">Money System</span>
+      </div>
+      <div class="system-cards">
+        <div class="sys-card">
+          <div class="sys-label">Bills</div>
+          <div class="sys-val">Auto</div>
+        </div>
+        <div class="sys-card">
+          <div class="sys-label">Spend</div>
+          <div class="sys-val">Aware</div>
+        </div>
+        <div class="sys-card">
+          <div class="sys-label">Save</div>
+          <div class="sys-val">Auto</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rule-block">
+      <p><strong>Rule:</strong> Awareness &gt; perfection. You don't have to be perfect — just look.</p>
+    </div>
+
+    <div class="reset-section">
+      <button class="btn btn-danger" onclick="resetMoney()">↺ Reset</button>
+    </div>
+
+  </div>
+
+  <!-- GROCERY VIEW -->
+  <div class="view" id="view-grocery">
+
+    <div class="section s-grocery">
+      <div class="grocery-cat">Protein</div>
+      <div class="item" data-id="chicken" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#0e0e0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Chicken</span>
+      </div>
+      <div class="item" data-id="ground-beef" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#0e0e0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Ground beef / turkey</span>
+      </div>
+      <div class="item" data-id="eggs" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#0e0e0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Eggs</span>
+      </div>
+
+      <div class="grocery-cat">Carbs</div>
+      <div class="item" data-id="rice" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#0e0e0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Ben's Cilantro Lime Rice</span>
+      </div>
+      <div class="item" data-id="bread" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#0e0e0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Bread / wraps</span>
+      </div>
+
+      <div class="grocery-cat">Easy Meals</div>
+      <div class="item" data-id="frozen" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#0e0e0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Frozen meals</span>
+      </div>
+      <div class="item" data-id="pasta" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#0e0e0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Pasta</span>
+      </div>
+
+      <div class="grocery-cat">Snacks</div>
+      <div class="item" data-id="snacks" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#0e0e0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="item-label">Whatever you actually eat</span>
+      </div>
+    </div>
+
+    <div class="rule-block">
+      <p>
+        <strong>Rules:</strong> Keep it simple &nbsp;·&nbsp; Don't wander &nbsp;·&nbsp;
+        Not on the list? Don't buy it.
+      </p>
+    </div>
+
+    <div class="reset-section">
+      <button class="btn btn-danger" onclick="resetGrocery()">↺ Uncheck All</button>
+    </div>
+
+  </div>
+
+</div><!-- /content -->
+
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-daily" onclick="switchTab('daily')">
+    <span class="nav-icon">☀️</span>
+    <span class="nav-label">Daily</span>
+  </button>
+  <button class="nav-item" id="nav-money" onclick="switchTab('money')">
+    <span class="nav-icon">💰</span>
+    <span class="nav-label">Money</span>
+  </button>
+  <button class="nav-item" id="nav-grocery" onclick="switchTab('grocery')">
+    <span class="nav-icon">🛒</span>
+    <span class="nav-label">Grocery</span>
+  </button>
+</nav>
+
+<script>
+  // ─── State ───────────────────────────────────────────────
+  const STORAGE_KEY = 'adhd_os_v2';
+  let state = load();
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const s = raw ? JSON.parse(raw) : {};
+      const today = todayStr();
+      if (s.date !== today) {
+        // New day: reset daily items, keep grocery & money
+        s.daily = {};
+        s.date = today;
+        // streak logic
+        const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+        const yStr = yesterday.toISOString().slice(0,10);
+        if (s.lastCompleted === yStr) {
+          s.streak = (s.streak || 0) + 1;
+        } else if (s.lastCompleted !== today) {
+          s.streak = 0;
+        }
+      }
+      s.money = s.money || {};
+      s.grocery = s.grocery || {};
+      s.streak = s.streak || 0;
+      return s;
+    } catch(e) { return { date: todayStr(), daily: {}, money: {}, grocery: {}, streak: 0 }; }
+  }
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+  }
+
+  function todayStr() {
+    return new Date().toISOString().slice(0,10);
+  }
+
+  // ─── Init ─────────────────────────────────────────────────
+  function init() {
+    // Date display
+    const d = new Date();
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('dateDisplay').textContent =
+      `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
+
+    // Restore checkboxes
+    restoreSection('.s-morning .item, .s-focus .item', state.daily, 'daily');
+    restoreSection('.reset-item', state.daily, 'daily');
+    restoreSection('.s-money .item', state.money, 'money');
+    restoreSection('.s-grocery .item', state.grocery, 'grocery');
+
+    updateProgress();
+    updateStreak();
+  }
+
+  function restoreSection(selector, bag, _) {
+    document.querySelectorAll(selector).forEach(item => {
+      const id = item.dataset.id;
+      if (bag[id]) item.classList.add('done');
+    });
+  }
+
+  // ─── Toggle ───────────────────────────────────────────────
+  function getBag(item) {
+    const view = item.closest('.view');
+    if (!view) return state.daily;
+    if (view.id === 'view-money') return state.money;
+    if (view.id === 'view-grocery') return state.grocery;
+    return state.daily;
+  }
+
+  function toggle(item) {
+    const id = item.dataset.id;
+    const bag = getBag(item);
+    if (bag[id]) {
+      delete bag[id];
+      item.classList.remove('done');
+    } else {
+      bag[id] = true;
+      item.classList.add('done');
+      item.classList.add('flash');
+      setTimeout(() => item.classList.remove('flash'), 300);
+    }
+    save();
+    updateProgress();
+  }
+
+  function toggleReset(item) {
+    const id = item.dataset.id;
+    const alreadyDone = item.classList.contains('done');
+    // Uncheck all reset items first
+    document.querySelectorAll('.reset-item').forEach(el => {
+      el.classList.remove('done');
+      delete state.daily[el.dataset.id];
+    });
+    // If it wasn't done, check this one
+    if (!alreadyDone) {
+      item.classList.add('done');
+      item.classList.add('flash');
+      setTimeout(() => item.classList.remove('flash'), 300);
+      state.daily[id] = true;
+    }
+    save();
+    updateProgress();
+  }
+
+  // ─── Progress ─────────────────────────────────────────────
+  function updateProgress() {
+    // Count: morning (3) + one reset (1) + focus (1) = 5 trackable items
+    const dailyItems = ['make-bed','quick-tidy','dishwasher','work-goal'];
+    const resetItems = ['dishes','laundry','trash','quick-clean'];
+
+    const morningDone = dailyItems.filter(id => state.daily[id]).length;
+    const resetDone = resetItems.some(id => state.daily[id]) ? 1 : 0;
+    const total = dailyItems.length + 1; // 5
+    const done = morningDone + resetDone;
+    const pct = Math.round((done / total) * 100);
+
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('pctLabel').textContent = pct + '%';
+  }
+
+  function updateStreak() {
+    const s = state.streak || 0;
+    for (let i = 0; i < 7; i++) {
+      const dot = document.getElementById('s' + i);
+      if (dot) dot.classList.toggle('hit', i < Math.min(s, 7));
+    }
+    document.getElementById('streakLabel').textContent =
+      s === 0 ? 'Start your streak today' :
+      s === 1 ? '1 day streak 🔥' :
+      `${s} day streak 🔥`;
+  }
+
+  // ─── Celebrate ────────────────────────────────────────────
+  function celebrate() {
+    state.lastCompleted = todayStr();
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+    const yStr = yesterday.toISOString().slice(0,10);
+    if (state.lastCompleted === todayStr() && (!state.prevCompleted || state.prevCompleted === yStr)) {
+      state.streak = (state.streak || 0) + 1;
+    }
+    state.prevCompleted = state.lastCompleted;
+    save();
+    updateStreak();
+    // Check all daily items
+    document.querySelectorAll('#view-daily .item').forEach(item => {
+      item.classList.add('done');
+      state.daily[item.dataset.id] = true;
+    });
+    save();
+    updateProgress();
+    alert('✅ Day marked done! Great work.');
+  }
+
+  // ─── Resets ───────────────────────────────────────────────
+  function resetDay() {
+    if (!confirm('Reset today\'s daily checklist?')) return;
+    state.daily = {};
+    document.querySelectorAll('#view-daily .item').forEach(i => i.classList.remove('done'));
+    save();
+    updateProgress();
+  }
+
+  function resetMoney() {
+    state.money = {};
+    document.querySelectorAll('.s-money .item').forEach(i => i.classList.remove('done'));
+    save();
+  }
+
+  function resetGrocery() {
+    state.grocery = {};
+    document.querySelectorAll('.s-grocery .item').forEach(i => i.classList.remove('done'));
+    save();
+  }
+
+  // ─── Tab switching ────────────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+    document.getElementById('view-' + tab).classList.add('active');
+    document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById('nav-' + tab).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  init();
+</script>
+</body>
+</html>
